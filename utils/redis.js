@@ -22,6 +22,10 @@ class RedisClient {
   async set(key, value, duration) {
     return this.client.setexAsync(key, duration, value);
   }
+
+  async del(key) {
+    this.client.del(key);
+  }
 }
 
 const redisClient = new RedisClient();
