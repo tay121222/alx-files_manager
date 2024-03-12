@@ -17,12 +17,12 @@ const UsersController = {
     const newUser = {
       email,
       password: hashedPassword,
-      _id: uuidv4(),
     };
 
-    await dbClient.db.collection('users').insertOne(newUser);
+    const result = await dbClient.db.collection('users').insertOne(newUser);
+    const insertedId = result.insertedId;
 
-    return res.status(201).json({ email: newUser.email, id: newUser._id });
+    return res.status(201).json({ email: newUser.email, id: insertedId });
   },
 };
 
