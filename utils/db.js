@@ -2,6 +2,7 @@ import { MongoClient } from 'mongodb';
 
 class DBClient {
   constructor() {
+    this.db = null;
     const host = process.env.DB_HOST || 'localhost';
     const port = process.env.DB_PORT || 27017;
     const database = process.env.DB_DATABASE || 'files_manager';
@@ -11,8 +12,7 @@ class DBClient {
       if (err) {
         console.error('MongoDB Connection Error:', err);
       } else {
-        this.client = client;
-        this.db = this.client.db();
+        this.db = client.db(database);
         this.users = this.db.collection('users');
       }
     });
