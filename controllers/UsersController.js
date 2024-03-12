@@ -1,5 +1,4 @@
 import sha1 from 'sha1';
-import { v4 as uuidv4 } from 'uuid';
 import dbClient from '../utils/db';
 
 const UsersController = {
@@ -18,11 +17,13 @@ const UsersController = {
       email,
       password: hashedPassword,
     };
-
-    const result = await dbClient.db.collection('users').insertOne(newUser);
-    const insertedId = result.insertedId;
-
-    return res.status(201).json({ email: newUser.email, id: insertedId });
+    try {
+      const result = await dbClient.db.collection('users').insertOne(newUser);
+      const { insertedId } = result;
+      return res.status(201).json({ email: newUser.email, id: insertedId });
+    } catch (error) {
+      return res.status(500).json({ error: 'Error creating user' });
+    }
   },
 };
 
