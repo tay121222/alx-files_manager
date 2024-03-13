@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import { ObjectID } from 'mongodb';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -14,6 +15,7 @@ class FilesController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
       const userId = await redisClient.get(`auth_${token}`);
+      console.log('UserID', userId);
 
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -30,7 +32,7 @@ class FilesController {
       }
 
       if (parentId !== '0') {
-        const parentFile = await dbClient.files.findOne({ _id: parentId });
+        const parentFile = await dbClient.files.findOne({ _id: ObjectID(parentId) });
         if (!parentFile || parentFile.type !== 'folder') {
           return res.status(400).json({ error: 'Parent not found or is not a folder' });
         }
@@ -39,7 +41,8 @@ class FilesController {
       let fileDocument;
       if (type === 'folder') {
         fileDocument = await dbClient.files.insertOne({
-          name, type, userId, parentId, isPublic,
+          name, type, userId: ObjectID(userId),
+	  parentId: parentId === '0' ? parentId : ObjectID(parentId), isPublic,
         });
       } else {
         const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
@@ -51,7 +54,12 @@ class FilesController {
         fs.writeFileSync(filePath, fileContent);
 
         fileDocument = await dbClient.files.insertOne({
-          name, type, userId, parentId, isPublic, localPath: filePath,
+          name,
+          type,
+          userId: ObjectID(userId),
+          parentId: parentId === '0' ? parentId : ObjectID(parentId),
+          isPublic,
+          localPath: filePath,
         });
       }
       const fileId = fileDocument.ops[0]._id;
