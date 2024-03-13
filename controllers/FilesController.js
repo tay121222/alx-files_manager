@@ -84,6 +84,79 @@ class FilesController {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  static async getShow(req, res) {
+    try {
+      const { id } = req.params;
+      const token = req.headers['x-token'];
+
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const file = await dbClient.files.findOne({ _id: ObjectID(id), userId: ObjectID(userId) },
+        {
+          projection: {
+            _id: 1, userId: 1, name: 1, type: 1, isPublic: 1, parentId: 1,
+          },
+        });
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      return res.json(file);
+    } catch (error) {
+      console.error('Error fetching file:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async getIndex(req, res) {
+    try {
+      const parentId = req.query.parentId || 0;
+      const page = req.query.page || 0;
+      const token = req.headers['x-token'];
+
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const files = await dbClient.files.aggregate([
+        { $match: { userId: ObjectID(userId), parentId: ObjectID(parentId) } },
+        { $skip: page * 20 },
+        { $limit: 20 },
+        {
+          $project: {
+            _id: 1,
+            userId: 1,
+            name: 1,
+            type: 1,
+            isPublic: 1,
+            parentId: 1,
+          },
+        },
+      ]).toArray();
+
+      if (parentId !== '0' && files.length === 0) {
+        return res.json([]);
+      }
+
+      return res.json(files);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export default FilesController;
