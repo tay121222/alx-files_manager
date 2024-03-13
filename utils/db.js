@@ -12,7 +12,7 @@ class DBClient {
       if (err) {
         console.error('MongoDB Connection Error:', err);
       } else {
-	this.client = client
+        this.client = client;
         this.db = client.db(database);
         this.users = this.db.collection('users');
       }
