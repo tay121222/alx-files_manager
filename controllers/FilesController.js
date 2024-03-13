@@ -33,9 +33,9 @@ class FilesController {
 
       if (parentId !== 0) {
         const parentFile = await dbClient.files.findOne({ _id: ObjectID(parentId) });
-	if (!parentFile) {
-	  return res.status(400).json({ error: 'Parent not found' });
-	}
+        if (!parentFile) {
+          return res.status(400).json({ error: 'Parent not found' });
+        }
         if (parentFile.type !== 'folder') {
           return res.status(400).json({ error: 'Parent is not a folder' });
         }
@@ -44,8 +44,11 @@ class FilesController {
       let fileDocument;
       if (type === 'folder') {
         fileDocument = await dbClient.files.insertOne({
-          name, type, userId: ObjectID(userId),
-	  parentId: parentId === 0 ? parentId : ObjectID(parentId), isPublic,
+          name,
+          type,
+          userId: ObjectID(userId),
+          parentId: parentId === 0 ? parentId : ObjectID(parentId),
+          isPublic,
         });
       } else {
         const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
