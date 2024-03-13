@@ -8,7 +8,7 @@ class FilesController {
   static async postUpload(req, res) {
     try {
       const {
-        name, type, data, parentId = '0', isPublic = false,
+        name, type, data, parentId = 0, isPublic = false,
       } = req.body;
       const token = req.headers['x-token'];
       if (!token) {
@@ -31,10 +31,13 @@ class FilesController {
         return res.status(400).json({ error: 'Missing data' });
       }
 
-      if (parentId !== '0') {
+      if (parentId !== 0) {
         const parentFile = await dbClient.files.findOne({ _id: ObjectID(parentId) });
-        if (!parentFile || parentFile.type !== 'folder') {
-          return res.status(400).json({ error: 'Parent not found or is not a folder' });
+	if (!parentFile) {
+	  return res.status(400).json({ error: 'Parent not found' });
+	}
+        if (parentFile.type !== 'folder') {
+          return res.status(400).json({ error: 'Parent is not a folder' });
         }
       }
 
@@ -42,7 +45,7 @@ class FilesController {
       if (type === 'folder') {
         fileDocument = await dbClient.files.insertOne({
           name, type, userId: ObjectID(userId),
-	  parentId: parentId === '0' ? parentId : ObjectID(parentId), isPublic,
+	  parentId: parentId === 0 ? parentId : ObjectID(parentId), isPublic,
         });
       } else {
         const folderPath = process.env.FOLDER_PATH || '/tmp/files_manager';
@@ -57,7 +60,7 @@ class FilesController {
           name,
           type,
           userId: ObjectID(userId),
-          parentId: parentId === '0' ? parentId : ObjectID(parentId),
+          parentId: parentId === 0 ? parentId : ObjectID(parentId),
           isPublic,
           localPath: filePath,
         });
