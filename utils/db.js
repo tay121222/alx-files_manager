@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 class DBClient {
   constructor() {
@@ -12,6 +12,7 @@ class DBClient {
       if (err) {
         console.error('MongoDB Connection Error:', err);
       } else {
+	this.client = client
         this.db = client.db(database);
         this.users = this.db.collection('users');
       }
@@ -20,6 +21,17 @@ class DBClient {
 
   isAlive() {
     return !!this.client;
+  }
+
+  async getUser(userId) {
+    try {
+      const objectId = ObjectId(userId);
+      const user = await this.client.db().collection('users').findOne({ _id: objectId });
+      return user;
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      return null;
+    }
   }
 
   async nbUsers() {
