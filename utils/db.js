@@ -15,6 +15,7 @@ class DBClient {
         this.client = client;
         this.db = client.db(database);
         this.users = this.db.collection('users');
+	this.files = this.db.collection('files');
       }
     });
   }
