@@ -106,10 +106,11 @@ class FilesController {
           },
         });
       if (!file) {
+        console.log('Check', file);
         return res.status(404).json({ error: 'Not found' });
       }
 
-      return res.json(file);
+      return res.status(200).json(file);
     } catch (error) {
       console.error('Error fetching file:', error);
       return res.status(500).json({ error: 'Internal server error' });
@@ -118,8 +119,6 @@ class FilesController {
 
   static async getIndex(req, res) {
     try {
-      const parentId = req.query.parentId || 0;
-      const page = req.query.page || 0;
       const token = req.headers['x-token'];
 
       if (!token) {
@@ -131,27 +130,38 @@ class FilesController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const files = await dbClient.files.aggregate([
-        { $match: { userId: ObjectID(userId), parentId: ObjectID(parentId) } },
+      const parentId = req.query.parentId || '0';
+      const page = req.query.parentId || '0';
+      const user = await dbClient.db.collection('users').findOne({ _id: ObjectID(userId) });
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      let aggreData = [
+        { $match: { $and: [{ parentId }] } },
         { $skip: page * 20 },
         { $limit: 20 },
-        {
-          $project: {
-            _id: 1,
-            userId: 1,
-            name: 1,
-            type: 1,
-            isPublic: 1,
-            parentId: 1,
-          },
-        },
-      ]).toArray();
-
-      if (parentId !== '0' && files.length === 0) {
-        return res.json([]);
+      ];
+      if (parentId === 0) {
+        aggreData = [{ $skip: page * 20 }, { $limit: 20 }];
       }
+      const files = await dbClient.db
+        .collection('files')
+        .aggregate(aggreData);
 
-      return res.json(files);
+      const filesArray = [];
+      await files.forEach((item) => {
+        const fileItem = {
+          id: item._id,
+          userId: item.userId,
+          name: item.name,
+          type: item.type,
+          isPublic: item.isPublic,
+          parentId: item.parentId,
+        };
+        filesArray.push(fileItem);
+      });
+
+      return res.json(filesArray);
     } catch (error) {
       console.error('Error fetching files:', error);
       return res.status(500).json({ error: 'Internal server error' });
