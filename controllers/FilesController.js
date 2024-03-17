@@ -167,6 +167,91 @@ class FilesController {
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  static async putPublish(req, res) {
+    try {
+      const id = req.params.id || '';
+      const token = req.headers['x-token'];
+
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const file = await dbClient.db.collection('files').findOne({
+        _id: ObjectID(id),
+        userId: ObjectID(userId),
+      });
+
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      await dbClient.db.collection('files').updateOne(
+        { _id: ObjectID(id) },
+        { $set: { isPublic: true } }
+      );
+
+      return res.status(200).json({
+        id: file._id,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: true,
+        parentId: file.parentId
+      });
+    } catch (error) {
+      console.error('Error publishing file:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  static async putUnpublish(req, res) {
+    try {
+      const { id } = req.params;
+      const token = req.headers['x-token'];
+
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const file = await dbClient.db.collection('files').findOne({
+        _id: ObjectID(id),
+        userId: ObjectID(userId),
+      });
+
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      await dbClient.db.collection('files').updateOne(
+        { _id: ObjectID(id) },
+        { $set: { isPublic: false } }
+      );
+
+      return res.status(200).json({
+        id: file._id,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: false,
+        parentId: file.parentId
+      });
+    } catch (error) {
+      console.error('Error unpublishing file:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
 }
 
 export default FilesController;
