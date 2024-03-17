@@ -131,35 +131,35 @@ class FilesController {
       }
 
       const parentId = req.query.parentId || '0';
-      const page = req.query.parentId || '0';
+      const page = parseInt(req.query.page || '0', 10);
       const user = await dbClient.db.collection('users').findOne({ _id: ObjectID(userId) });
       if (!user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
       let aggreData = [
-        { $match: { $and: [{ parentId }] } },
+        { $match: { userId: ObjectID(userId) } },
+        { $match: { parentId: parentId === '0' ? '0' : ObjectID(parentId) } },
         { $skip: page * 20 },
         { $limit: 20 },
       ];
-      if (parentId === 0) {
-        aggreData = [{ $skip: page * 20 }, { $limit: 20 }];
+      if (parentId === '0') {
+        aggreData = [
+          { $match: { userId: ObjectID(userId) } },
+          { $skip: page * 20 }, { $limit: 20 }];
       }
+
       const files = await dbClient.db
         .collection('files')
-        .aggregate(aggreData);
+        .aggregate(aggreData).toArray();
 
-      const filesArray = [];
-      await files.forEach((item) => {
-        const fileItem = {
-          id: item._id,
-          userId: item.userId,
-          name: item.name,
-          type: item.type,
-          isPublic: item.isPublic,
-          parentId: item.parentId,
-        };
-        filesArray.push(fileItem);
-      });
+      const filesArray = files.map((item) => ({
+        id: item._id,
+        userId: item.userId,
+        name: item.name,
+        type: item.type,
+        isPublic: item.isPublic,
+        parentId: item.parentId,
+      }));
 
       return res.json(filesArray);
     } catch (error) {
