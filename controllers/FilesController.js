@@ -193,7 +193,7 @@ class FilesController {
 
       await dbClient.db.collection('files').updateOne(
         { _id: ObjectID(id) },
-        { $set: { isPublic: true } }
+        { $set: { isPublic: true } },
       );
 
       return res.status(200).json({
@@ -202,7 +202,7 @@ class FilesController {
         name: file.name,
         type: file.type,
         isPublic: true,
-        parentId: file.parentId
+        parentId: file.parentId,
       });
     } catch (error) {
       console.error('Error publishing file:', error);
@@ -235,7 +235,7 @@ class FilesController {
 
       await dbClient.db.collection('files').updateOne(
         { _id: ObjectID(id) },
-        { $set: { isPublic: false } }
+        { $set: { isPublic: false } },
       );
 
       return res.status(200).json({
@@ -244,14 +244,13 @@ class FilesController {
         name: file.name,
         type: file.type,
         isPublic: false,
-        parentId: file.parentId
+        parentId: file.parentId,
       });
     } catch (error) {
       console.error('Error unpublishing file:', error);
       return res.status(500).json({ error: 'Internal server error' });
     }
   }
-
 }
 
 export default FilesController;
